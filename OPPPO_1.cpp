@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 #include <vector>
 #include <string>
 #include <sstream>
@@ -6,7 +6,7 @@
 #include <fstream>
 #include <locale>
 
-void printHelp() {
+static void printHelp() {
     std::ifstream file("README.txt");
     if (!file.is_open()) {
         std::cerr << "Ошибка открытия файла с помощью." << std::endl;
@@ -63,10 +63,12 @@ public:
         }
         return false;
     }
+
     bool matchesConditionCountry(const std::string& parameter, const std::string& sign, const std::string& value) const override {
         if (parameter == "country") {
             if (sign == "==") return country == value; // Для сравнения страны
         }
+        return false;
     }
 };
 
@@ -101,7 +103,7 @@ public:
             if (sign == ">=") return enginePower >= value;
             if (sign == "<=") return enginePower <= value;
         }
-        
+
         return false;
     }
     bool matchesConditionCountry(const std::string& parameter, const std::string& sign, const std::string& value) const override {
@@ -179,7 +181,6 @@ public:
         std::istringstream iss(condition);
         std::string parameter, sign;
 
-        // Если сравниваем по стране, обработка отдельная
         if (condition.find("country") != std::string::npos) {
             std::string countryValue;
             iss >> parameter >> sign >> countryValue;
@@ -188,7 +189,6 @@ public:
             return;
         }
 
-        // Обработка других условий
         int value;
         iss >> parameter >> sign >> value;
         vehicles.erase(std::remove_if(vehicles.begin(), vehicles.end(),
@@ -202,38 +202,74 @@ public:
     }
 };
 
-void executeCommandsFromFile(const std::string& filename, Container& container) {
-    std::ifstream file(filename);
-    if (!file.is_open()) {
-        std::cerr << "Ошибка открытия файла с командами." << std::endl;
-        return;
-    }
-
+static void executeCommandsFromSource(Container& container, std::istream& source, bool loadCommandExecuted) {
     std::string command;
-    while (std::getline(file, command)) {
-        if (command.find("ADD") == 0) {
-            std::istringstream iss(command);
-            std::string temp, type;
-            int param1, param2;
-            std::string country;
 
-            iss >> temp >> type >> param1 >> param2 >> country;
-            if (type == "Truck") {
-                container.addVehicle(new Truck(param1, param2, country));
-            }
-            else if (type == "Bus") {
-                container.addVehicle(new Bus(param1, param2, country));
-            }
-            else if (type == "Car") {
-                container.addVehicle(new Car(param1, param2, 150, country)); // Стандартная мощность для машины
+    while (std::getline(source, command)) {
+        if (command.find("ADD") == 0) {
+            if (command.length() > 4) {
+                std::istringstream iss(command);
+                std::string temp, type;
+                int param1, param2;
+                std::string country;
+
+                iss >> temp >> type >> param1 >> param2 >> country;
+                if (iss.fail() || country.empty()) {
+                    std::cerr << "Ошибка: Неправильный формат команды ADD. Ожидается: ADD <type> <param1> <param2> <country>" << std::endl;
+                }
+                else {
+                    if (type == "Truck") {
+                        container.addVehicle(new Truck(param1, param2, country));
+                    }
+                    else if (type == "Bus") {
+                        container.addVehicle(new Bus(param1, param2, country));
+                    }
+                    else if (type == "Car") {
+                        container.addVehicle(new Car(param1, param2, 150, country)); // Стандартная мощность для машины
+                    }
+                    else {
+                        std::cerr << "Некорректный ввод названия транспорта или его параметров!" << std::endl;
+                    }
+                }
             }
             else {
-                std::cerr << "Некорректный ввод названия транспорта или его параметров!" << std::endl;
+                std::cerr << "Ошибка: Не указаны данные для добавления транспорта." << std::endl;
             }
         }
         else if (command.find("REM") == 0) {
-            std::string condition = command.substr(4);
-            container.removeVehicles(condition);
+            if (command.length() > 4) {
+                std::string condition = command.substr(4);
+                std::istringstream cmdStream(condition);
+                std::string parameter, sign;
+                int value;
+
+                if (condition.find("country") != std::string::npos) {
+                    std::string countryValue;
+                    std::istringstream countryStream(condition);
+                    countryStream >> parameter >> sign >> countryValue;
+                    if (parameter == "country" && sign == "==") {
+                        container.removeVehicles(condition);
+                    }
+                    else {
+                        std::cerr << "Ошибка: Неправильный формат условия для удаления по стране." << std::endl;
+                    }
+                }
+                else if (cmdStream >> parameter >> sign >> value) {
+                    if ((parameter == "payload" || parameter == "seats" || parameter == "doors" || parameter == "power" || parameter == "max_speed") &&
+                        (sign == ">" || sign == "<" || sign == "==" || sign == ">=" || sign == "<=")) {
+                        container.removeVehicles(condition);
+                    }
+                    else {
+                        std::cerr << "Ошибка: Неправильный формат условия. Ожидается: <parameter> <sign> <value>" << std::endl;
+                    }
+                }
+                else {
+                    std::cerr << "Ошибка: Не указаны или указаны неверно условия для удаления транспорта." << std::endl;
+                }
+            }
+            else {
+            std::cerr << "Ошибка: Не указаны данные для удаления транспорта." << std::endl;
+            }
         }
         else if (command == "PRINT") {
             container.print();
@@ -241,72 +277,42 @@ void executeCommandsFromFile(const std::string& filename, Container& container) 
         else if (command == "HELP") {
             printHelp();
         }
+        else if (command.find("LOAD") == 0) {
+            if (command.length() > 5) {
+                loadCommandExecuted = true;
+                std::string filename = command.substr(5);
+                std::ifstream file(filename);
+                if (file.is_open()) {
+                    executeCommandsFromSource(container, file, loadCommandExecuted);
+                    file.close();
+                }
+                else {
+                    std::cerr << "Ошибка открытия файла с командами." << std::endl;
+                }
+                loadCommandExecuted = false; // Установить флаг, если команда LOAD выполнена
+            }
+            else {
+                std::cerr << "Введена неверная команда: " << command << std::endl;
+            }
+        }
         else {
-            std::cerr << "Введена неверная команда: " << command << std::endl;
+            std::cerr << "Ошибка: Не указано название файла для загрузки." << std::endl;  
+        }
+
+        // Вывод сообщения после выполнения команды, кроме LOAD
+        if (!loadCommandExecuted) {
+            std::cout << "Enter commands (ADD, REM, PRINT, HELP, LOAD, EXIT): ";
         }
     }
-
-    file.close();
 }
 
 int main() {
-
-    std::setlocale(LC_ALL, "ru_RU.UTF-8");
- //   std::wcout.imbue(std::locale("ru_RU.UTF-8"));
-
+    std::setlocale(LC_ALL, "ru_RU");
     Container container;
+    bool loadCommandExecuted = false;
 
-  //  container.addVehicle(new Truck(1500, 250, "USA"));
- //   container.addVehicle(new Bus(40, 300, "Germany"));
-  //  container.addVehicle(new Car(4, 180, 150, "Japan"));
-
-    std::string command;
-    while (true) {
-        std::cout << "Enter command (ADD, REM, PRINT, HELP, LOAD, EXIT): ";
-        std::getline(std::cin, command);
-        if (command.find("LOAD") == 0) {
-            std::string filename = command.substr(5);
-            executeCommandsFromFile(filename, container);
-        }
-        else if (command.find("ADD") == 0) {
-            // Example commands: ADD Truck 1500 250 USA
-            std::istringstream iss(command);
-            std::string temp, type;
-            int param1, param2;
-            std::string country;
-
-            iss >> temp >> type >> param1 >> param2 >> country;
-            if (type == "Truck") {
-                container.addVehicle(new Truck(param1, param2, country));
-            }
-            else if (type == "Bus") {
-                container.addVehicle(new Bus(param1, param2, country));
-            }
-            else if (type == "Car") {
-                container.addVehicle(new Car(param1, param2, 150, country)); // Default power for car
-            }
-            else {
-                std::cout << "Incorrect input of the name of the transport or its parameters!" << std::endl;
-            }
-        }
-        else if (command.find("REM") == 0) {
-            // Example condition: REM payload > 1000
-            std::string condition = command.substr(4);
-            container.removeVehicles(condition);
-        }
-        else if (command == "PRINT") {
-            container.print();
-        }
-        else if (command == "HELP") {
-            printHelp();
-        }
-        else if (command == "EXIT") {
-            break;
-        }
-        else {
-            std::cout << "The wrong command was entered!!!" << std::endl;
-        }
-    }
+    std::cout << "Enter commands (ADD, REM, PRINT, HELP, LOAD, EXIT): ";
+    executeCommandsFromSource(container, std::cin, loadCommandExecuted);
 
     return 0;
 }
