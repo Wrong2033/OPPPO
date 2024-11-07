@@ -1,0 +1,4 @@
+ADD Truck 1500 250 USA
+ADD Bus 40 300 Germany
+ADD Car 4 180 Japan
+PRINT
