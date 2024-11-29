@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <fstream>
 #include <locale>
+#include "OPPPO_1.h"
 
 static void printHelp() {
     std::ifstream file("README.txt");
@@ -22,185 +23,154 @@ static void printHelp() {
     file.close();
 }
 
-class Vehicle {
-public:
-    virtual std::string getInfo() const = 0;
-    virtual bool matchesCondition(const std::string& parameter, const std::string& sign, int value) const = 0;
-    virtual bool matchesConditionCountry(const std::string& parameter, const std::string& sign, const std::string& value) const = 0;
-    virtual ~Vehicle() = default;
-};
 
-class Truck : public Vehicle {
-private:
-    int payloadCapacity;
-    int enginePower;
-    std::string country;
+Truck::Truck(int capacity, int power, const std::string& country)
+    : payloadCapacity(capacity), enginePower(power), country(country) {}
 
-public:
-    Truck(int capacity, int power, const std::string& country)
-        : payloadCapacity(capacity), enginePower(power), country(country) {}
+std::string  Truck::getInfo() const  {
+    return "Truck: Payload Capacity = " + std::to_string(payloadCapacity) +
+        " kg, Engine Power = " + std::to_string(enginePower) +
+        " HP, Country = " + country;
+}
 
-    std::string getInfo() const override {
-        return "Truck: Payload Capacity = " + std::to_string(payloadCapacity) +
-            " kg, Engine Power = " + std::to_string(enginePower) +
-            " HP, Country = " + country;
+bool  Truck::matchesCondition(const std::string& parameter, const std::string& sign, int value) const  {
+    if (parameter == "payload") {
+        if (sign == ">") return payloadCapacity > value;
+        if (sign == "<") return payloadCapacity < value;
+        if (sign == "==") return payloadCapacity == value;
+        if (sign == ">=") return payloadCapacity >= value;
+        if (sign == "<=") return payloadCapacity <= value;
+    }
+    if (parameter == "power") {
+        if (sign == ">") return enginePower > value;
+        if (sign == "<") return enginePower < value;
+        if (sign == "==") return enginePower == value;
+        if (sign == ">=") return enginePower >= value;
+        if (sign == "<=") return enginePower <= value;
+    }
+    return false;
+}
+
+bool  Truck::matchesConditionCountry(const std::string& parameter, const std::string& sign, const std::string& value) const  {
+    if (parameter == "country") {
+        if (sign == "==") return country == value; // Для сравнения страны
+    }
+    return false;
+}
+
+
+
+Bus::Bus(int capacity, int power, const std::string& country)
+    : seatingCapacity(capacity), enginePower(power), country(country) {}
+
+std::string  Bus::getInfo() const  {
+    return "Bus: Seating Capacity = " + std::to_string(seatingCapacity) +
+        ", Engine Power = " + std::to_string(enginePower) +
+        " HP, Country = " + country;
+}
+
+bool  Bus::matchesCondition(const std::string& parameter, const std::string& sign, int value) const  {
+    if (parameter == "seats") {
+        if (sign == ">") return seatingCapacity > value;
+        if (sign == "<") return seatingCapacity < value;
+        if (sign == "==") return seatingCapacity == value;
+        if (sign == ">=") return seatingCapacity >= value;
+        if (sign == "<=") return seatingCapacity <= value;
+    }
+    if (parameter == "power") {
+        if (sign == ">") return enginePower > value;
+        if (sign == "<") return enginePower < value;
+        if (sign == "==") return enginePower == value;
+        if (sign == ">=") return enginePower >= value;
+        if (sign == "<=") return enginePower <= value;
     }
 
-    bool matchesCondition(const std::string& parameter, const std::string& sign, int value) const override {
-        if (parameter == "payload") {
-            if (sign == ">") return payloadCapacity > value;
-            if (sign == "<") return payloadCapacity < value;
-            if (sign == "==") return payloadCapacity == value;
-            if (sign == ">=") return payloadCapacity >= value;
-            if (sign == "<=") return payloadCapacity <= value;
-        }
-        if (parameter == "power") {
-            if (sign == ">") return enginePower > value;
-            if (sign == "<") return enginePower < value;
-            if (sign == "==") return enginePower == value;
-            if (sign == ">=") return enginePower >= value;
-            if (sign == "<=") return enginePower <= value;
-        }
-        return false;
+    return false;
+}
+bool  Bus::matchesConditionCountry(const std::string& parameter, const std::string& sign, const std::string& value) const  {
+    if (parameter == "country") {
+        if (sign == "==") return country == value; // Для сравнения страны
     }
+}
 
-    bool matchesConditionCountry(const std::string& parameter, const std::string& sign, const std::string& value) const override {
-        if (parameter == "country") {
-            if (sign == "==") return country == value; // Для сравнения страны
-        }
-        return false;
+
+
+Car::Car(int doors, int speed, int power, const std::string& country)
+    : doors(doors), maxSpeed(speed), enginePower(power), country(country) {}
+
+std::string  Car::getInfo() const  {
+    return "Car: Doors = " + std::to_string(doors) +
+        ", Max Speed = " + std::to_string(maxSpeed) +
+        " km/h, Engine Power = " + std::to_string(enginePower) +
+        " HP, Country = " + country;
+}
+
+bool  Car::matchesCondition(const std::string& parameter, const std::string& sign, int value) const  {
+    if (parameter == "doors") {
+        if (sign == ">") return doors > value;
+        if (sign == "<") return doors < value;
+        if (sign == "==") return doors == value;
+        if (sign == ">=") return doors >= value;
+        if (sign == "<=") return doors <= value;
     }
-};
-
-class Bus : public Vehicle {
-private:
-    int seatingCapacity;
-    int enginePower;
-    std::string country;
-
-public:
-    Bus(int capacity, int power, const std::string& country)
-        : seatingCapacity(capacity), enginePower(power), country(country) {}
-
-    std::string getInfo() const override {
-        return "Bus: Seating Capacity = " + std::to_string(seatingCapacity) +
-            ", Engine Power = " + std::to_string(enginePower) +
-            " HP, Country = " + country;
+    if (parameter == "speed") {
+        if (sign == ">") return maxSpeed > value;
+        if (sign == "<") return maxSpeed < value;
+        if (sign == "==") return maxSpeed == value;
+        if (sign == ">=") return maxSpeed >= value;
+        if (sign == "<=") return maxSpeed <= value;
     }
-
-    bool matchesCondition(const std::string& parameter, const std::string& sign, int value) const override {
-        if (parameter == "seats") {
-            if (sign == ">") return seatingCapacity > value;
-            if (sign == "<") return seatingCapacity < value;
-            if (sign == "==") return seatingCapacity == value;
-            if (sign == ">=") return seatingCapacity >= value;
-            if (sign == "<=") return seatingCapacity <= value;
-        }
-        if (parameter == "power") {
-            if (sign == ">") return enginePower > value;
-            if (sign == "<") return enginePower < value;
-            if (sign == "==") return enginePower == value;
-            if (sign == ">=") return enginePower >= value;
-            if (sign == "<=") return enginePower <= value;
-        }
-
-        return false;
+    if (parameter == "power") {
+        if (sign == ">") return enginePower > value;
+        if (sign == "<") return enginePower < value;
+        if (sign == "==") return enginePower == value;
+        if (sign == ">=") return enginePower >= value;
+        if (sign == "<=") return enginePower <= value;
     }
-    bool matchesConditionCountry(const std::string& parameter, const std::string& sign, const std::string& value) const override {
-        if (parameter == "country") {
-            if (sign == "==") return country == value; // Для сравнения страны
-        }
+    return false;
+}
+bool  Car::matchesConditionCountry(const std::string& parameter, const std::string& sign, const std::string& value) const  {
+    if (parameter == "country") {
+        if (sign == "==") return country == value; // Для сравнения страны
     }
-};
+}
 
-class Car : public Vehicle {
-private:
-    int doors;
-    int maxSpeed;
-    int enginePower;
-    std::string country;
 
-public:
-    Car(int doors, int speed, int power, const std::string& country)
-        : doors(doors), maxSpeed(speed), enginePower(power), country(country) {}
 
-    std::string getInfo() const override {
-        return "Car: Doors = " + std::to_string(doors) +
-            ", Max Speed = " + std::to_string(maxSpeed) +
-            " km/h, Engine Power = " + std::to_string(enginePower) +
-            " HP, Country = " + country;
+Container::~Container() {
+    for (auto vehicle : vehicles) {
+        delete vehicle;
     }
+}
 
-    bool matchesCondition(const std::string& parameter, const std::string& sign, int value) const override {
-        if (parameter == "doors") {
-            if (sign == ">") return doors > value;
-            if (sign == "<") return doors < value;
-            if (sign == "==") return doors == value;
-            if (sign == ">=") return doors >= value;
-            if (sign == "<=") return doors <= value;
-        }
-        if (parameter == "speed") {
-            if (sign == ">") return maxSpeed > value;
-            if (sign == "<") return maxSpeed < value;
-            if (sign == "==") return maxSpeed == value;
-            if (sign == ">=") return maxSpeed >= value;
-            if (sign == "<=") return maxSpeed <= value;
-        }
-        if (parameter == "power") {
-            if (sign == ">") return enginePower > value;
-            if (sign == "<") return enginePower < value;
-            if (sign == "==") return enginePower == value;
-            if (sign == ">=") return enginePower >= value;
-            if (sign == "<=") return enginePower <= value;
-        }
-        return false;
-    }
-    bool matchesConditionCountry(const std::string& parameter, const std::string& sign, const std::string& value) const override {
-        if (parameter == "country") {
-            if (sign == "==") return country == value; // Для сравнения страны
-        }
-    }
-};
+void Container::addVehicle(Vehicle* vehicle) {
+    vehicles.push_back(vehicle);
+}
 
-class Container {
-private:
-    std::vector<Vehicle*> vehicles;
+void Container::removeVehicles(const std::string& condition) {
+    std::istringstream iss(condition);
+    std::string parameter, sign;
 
-public:
-    ~Container() {
-        for (auto vehicle : vehicles) {
-            delete vehicle;
-        }
-    }
-
-    void addVehicle(Vehicle* vehicle) {
-        vehicles.push_back(vehicle);
-    }
-
-    void removeVehicles(const std::string& condition) {
-        std::istringstream iss(condition);
-        std::string parameter, sign;
-
-        if (condition.find("country") != std::string::npos) {
-            std::string countryValue;
-            iss >> parameter >> sign >> countryValue;
-            vehicles.erase(std::remove_if(vehicles.begin(), vehicles.end(),
-                [&parameter, &sign, &countryValue](Vehicle* v) { return v->matchesConditionCountry(parameter, sign, countryValue); }), vehicles.end());
-            return;
-        }
-
-        int value;
-        iss >> parameter >> sign >> value;
+    if (condition.find("country") != std::string::npos) {
+        std::string countryValue;
+        iss >> parameter >> sign >> countryValue;
         vehicles.erase(std::remove_if(vehicles.begin(), vehicles.end(),
-            [&parameter, &sign, value](Vehicle* v) { return v->matchesCondition(parameter, sign, value); }), vehicles.end());
+            [&parameter, &sign, &countryValue](Vehicle* v) { return v->matchesConditionCountry(parameter, sign, countryValue); }), vehicles.end());
+        return;
     }
 
-    void print() const {
-        for (const auto& vehicle : vehicles) {
-            std::cout << vehicle->getInfo() << std::endl;
-        }
+    int value;
+    iss >> parameter >> sign >> value;
+    vehicles.erase(std::remove_if(vehicles.begin(), vehicles.end(),
+        [&parameter, &sign, value](Vehicle* v) { return v->matchesCondition(parameter, sign, value); }), vehicles.end());
+}
+
+void Container::print() const {
+    for (const auto& vehicle : vehicles) {
+        std::cout << vehicle->getInfo() << std::endl;
     }
-};
+}
+
 
 static void executeCommandsFromSource(Container& container, std::istream& source, bool loadCommandExecuted) {
     std::string command;
@@ -316,3 +286,4 @@ int main() {
 
     return 0;
 }
+
